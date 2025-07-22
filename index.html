@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Estudos com IA</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilo base para a página */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+
+        /* Estilos para o efeito de flip do Flashcard */
+        .flashcard {
+            background-color: transparent;
+            width: 100%;
+            min-height: 220px;
+            perspective: 1000px;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 220px;
+            text-align: center;
+            transition: transform 0.7s;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flashcard.is-flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .flashcard-front {
+            background-color: white;
+            color: #1e293b; /* slate-800 */
+        }
+
+        .flashcard-back {
+            background-color: #334155; /* slate-700 */
+            color: white;
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Gerador de Estudos</h1>
+            <p class="mt-2 text-lg text-slate-600">Crie um prompt para gerar seu JSON ou cole-o manualmente.</p>
+        </header>
+
+        <main class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Coluna da Esquerda: Geração de Prompt -->
+                <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+                    <h3 class="text-xl font-bold mb-3 text-indigo-800">✨ Gerador de Prompt para IA</h3>
+                    <p class="text-sm text-indigo-700 mb-4">Preencha os campos para criar um prompt otimizado. Copie e cole na sua IA de preferência.</p>
+                    
+                    <div>
+                        <label for="ai-topic-input" class="block text-sm font-semibold mb-1 text-slate-700">Tópico; Quantidade; Dificuldade</label>
+                        <input type="text" id="ai-topic-input" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Revolução Francesa; 8; Difícil">
+                    </div>
+                    
+                    <button id="btn-prompt-generate" class="mt-4 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                        Gerar Prompt
+                    </button>
+                    
+                    <div id="prompt-output-area" class="hidden mt-4">
+                        <label class="block text-sm font-semibold mb-1 text-slate-700">Seu prompt gerado:</label>
+                        <textarea id="generated-prompt" rows="5" readonly class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-sm"></textarea>
+                        <button id="btn-copy-prompt" class="mt-2 w-full bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-800">Copiar Prompt</button>
+                    </div>
+                </div>
+
+                <!-- Coluna da Direita: Input Manual -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-slate-700">Cole o JSON gerado aqui</h3>
+                    <textarea id="json-input" rows="8" class="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Cole o JSON da sua IA aqui..."></textarea>
+                    <div id="error-message" class="mt-2 text-sm text-red-600 font-medium"></div>
+                    <div class="flex gap-4 mt-4">
+                        <button id="btn-questoes" class="w-full bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-800">
+                            Ver como Questões
+                        </button>
+                        <button id="btn-flashcards" class="w-full bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700">
+                            Ver como Flashcards
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-8 border-slate-200">
+
+            <div id="output-container" class="space-y-6">
+                <!-- O conteúdo gerado aparecerá aqui -->
+            </div>
+            
+            <!-- Botões de Relatório -->
+            <div id="summary-controls" class="hidden mt-10 pt-6 border-t border-slate-200">
+                 <h3 class="text-xl font-bold text-center text-slate-800 mb-4">Relatórios</h3>
+                 <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="btn-summary" class="w-full sm:w-auto bg-slate-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition">
+                        Baixar Resumo de Acertos
+                    </button>
+                    <button id="btn-download-erros" class="w-full sm:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
+                        Baixar JSON dos Erros
+                    </button>
+                 </div>
+            </div>
+
+        </main>
+        
+        <footer class="text-center mt-8 text-slate-500 text-sm">
+            <p>Criado para facilitar seus estudos.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ELEMENTOS DO DOM ---
+            const jsonInput = document.getElementById('json-input');
+            const btnQuestoes = document.getElementById('btn-questoes');
+            const btnFlashcards = document.getElementById('btn-flashcards');
+            const outputContainer = document.getElementById('output-container');
+            const errorMessage = document.getElementById('error-message');
+            const summaryControls = document.getElementById('summary-controls');
+            const btnSummary = document.getElementById('btn-summary');
+            const btnDownloadErros = document.getElementById('btn-download-erros');
+            
+            // --- ELEMENTOS DO GERADOR DE PROMPT ---
+            const aiTopicInput = document.getElementById('ai-topic-input');
+            const btnPromptGenerate = document.getElementById('btn-prompt-generate');
+            const promptOutputArea = document.getElementById('prompt-output-area');
+            const generatedPrompt = document.getElementById('generated-prompt');
+            const btnCopyPrompt = document.getElementById('btn-copy-prompt');
+
+            // --- ESTADO DA APLICAÇÃO ---
+            let originalData = [];
+            let studyState = [];
+
+            // --- DADOS DE EXEMPLO ---
+            const sampleData = [
+                { "id": 1, "assunto": "JavaScript", "nivel": "Fácil", "pergunta": "O que o método `addEventListener` faz?", "resposta": "Ele anexa um manipulador de eventos a um elemento específico, permitindo executar uma função quando o evento ocorre." },
+                { "id": 2, "assunto": "Biologia Celular", "nivel": "Médio", "pergunta": "Qual é a principal função das mitocôndrias?", "resposta": "São responsáveis pela respiração celular e pela produção da maior parte do ATP (energia) da célula." }
+            ];
+
+            // --- FUNÇÕES DE LÓGICA E RENDERIZAÇÃO ---
+
+            function clearOutput() {
+                outputContainer.innerHTML = '';
+                errorMessage.textContent = '';
+                summaryControls.classList.add('hidden');
+            }
+
+            function initializeState(data) {
+                originalData = data;
+                studyState = data.map(item => ({ id: item.id, isCorrect: false }));
+            }
+
+            function parseJsonInput() {
+                try {
+                    const data = JSON.parse(jsonInput.value);
+                    if (!Array.isArray(data) || !data.every(item => 'id' in item)) {
+                         errorMessage.textContent = 'Erro: O JSON deve ser um array de objetos, e cada objeto deve ter uma chave "id".';
+                         return null;
+                    }
+                    errorMessage.textContent = '';
+                    initializeState(data);
+                    return data;
+                } catch (error) {
+                    errorMessage.textContent = 'Erro: O formato do JSON é inválido.';
+                    clearOutput();
+                    return null;
+                }
+            }
+            
+            function renderQuestoes(data) {
+                clearOutput();
+                const html = data.map(item => {
+                    const state = studyState.find(s => s.id === item.id);
+                    return `
+                    <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm relative" data-id="${item.id}">
+                        <button data-action="mark-correct" class="${state.isCorrect ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition">&check;</button>
+                        <div class="flex items-center mb-4 flex-wrap gap-2">
+                            <p class="text-sm font-medium text-indigo-600">${item.assunto || 'N/A'}</p>
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${ item.nivel === 'Fácil' ? 'bg-green-100 text-green-800' : item.nivel === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' }">${item.nivel || 'N/A'}</span>
+                        </div>
+                        <p class="text-slate-800 text-lg mb-4 pr-10">${item.pergunta || 'N/A'}</p>
+                        <div class="border-t border-slate-200 pt-3">
+                            <button data-action="toggle-answer" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Mostrar Resposta</button>
+                            <div class="resposta-container hidden mt-2">
+                                <p class="text-slate-700 bg-slate-50 p-3 rounded-md">${item.resposta || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+                outputContainer.innerHTML = html;
+                summaryControls.classList.remove('hidden');
+            }
+
+            function renderFlashcards(data) {
+                clearOutput();
+                const html = data.map(item => {
+                    const state = studyState.find(s => s.id === item.id);
+                    return `
+                    <div class="relative">
+                        <button data-action="mark-correct" class="${state.isCorrect ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition z-10">&check;</button>
+                        <div class="flashcard" data-action="flip" data-id="${item.id}">
+                            <div class="flashcard-inner">
+                                <div class="flashcard-front">
+                                    <div class="w-full flex items-center px-2 mb-4">
+                                        <p class="text-sm font-medium text-slate-500">${item.assunto || 'N/A'}</p>
+                                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${ item.nivel === 'Fácil' ? 'bg-green-100 text-green-800' : item.nivel === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' }">${item.nivel || 'N/A'}</span>
+                                    </div>
+                                    <p class="text-xl font-semibold px-4">${item.pergunta || 'N/A'}</p>
+                                </div>
+                                <div class="flashcard-back">
+                                    <p class="text-lg">${item.resposta || 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+                outputContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">${html}</div>`;
+                summaryControls.classList.remove('hidden');
+            }
+            
+            function generateSummary() {
+                const date = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
+                let summaryHtml = `
+                    <html><head><title>Resumo de Acertos</title><style>body{font-family: sans-serif; padding: 20px;} table{width: 100%; border-collapse: collapse;} th, td{border: 1px solid #ddd; padding: 8px; text-align: left;} th{background-color: #f2f2f2;}</style></head>
+                    <body><h1>Resumo de Acertos</h1><p><strong>Data:</strong> ${date}</p><table><thead><tr><th>Questão</th><th>Acertou?</th></tr></thead><tbody>`;
+
+                originalData.forEach(item => {
+                    const state = studyState.find(s => s.id === item.id);
+                    summaryHtml += `<tr><td><strong>${item.assunto}:</strong> ${item.pergunta}</td><td>${state.isCorrect ? 'Sim ✅' : 'Não ❌'}</td></tr>`;
+                });
+
+                summaryHtml += `</tbody></table></body></html>`;
+                
+                const summaryWindow = window.open('', '_blank');
+                summaryWindow.document.write(summaryHtml);
+                summaryWindow.document.close();
+                summaryWindow.print();
+            }
+
+            function downloadErroredJson() {
+                const erroredIds = studyState.filter(s => !s.isCorrect).map(s => s.id);
+                const erroredItems = originalData.filter(item => erroredIds.includes(item.id));
+
+                if (erroredItems.length === 0) {
+                    alert('Parabéns! Você acertou todas as questões.');
+                    return;
+                }
+                
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = String(now.getFullYear()).slice(-2);
+                const formattedDate = `${day}-${month}-${year}`;
+
+                const jsonString = JSON.stringify(erroredItems, null, 4);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `erros_revisao_${formattedDate}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // --- GERADOR DE PROMPT ---
+            function generatePromptForAI() {
+                const inputParts = aiTopicInput.value.split(';').map(part => part.trim());
+                
+                const topic = inputParts[0];
+                const quantity = parseInt(inputParts[1], 10) || 5;
+                const difficulty = inputParts[2] || 'variada';
+
+                if (!topic) {
+                    alert("Por favor, insira pelo menos um tópico.");
+                    return;
+                }
+
+                const prompt = `Crie um arquivo JSON para um quiz sobre '${topic}'. O JSON deve ser um array de ${quantity} objetos. Cada objeto deve ter as chaves: "id" (numérico e único, começando em 1), "assunto" (string, o tópico principal), "nivel" (string, com dificuldade ${difficulty}), "pergunta" (string) e "resposta" (string). O JSON deve ser estritamente válido e pronto para ser processado.`;
+                
+                generatedPrompt.value = prompt;
+                promptOutputArea.classList.remove('hidden');
+            }
+
+            function copyPromptToClipboard() {
+                generatedPrompt.select();
+                generatedPrompt.setSelectionRange(0, 99999); // For mobile devices
+
+                try {
+                    document.execCommand('copy');
+                    btnCopyPrompt.textContent = 'Copiado!';
+                    setTimeout(() => {
+                        btnCopyPrompt.textContent = 'Copiar Prompt';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Falha ao copiar o prompt: ', err);
+                    alert('Não foi possível copiar o texto. Por favor, copie manualmente.');
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            btnQuestoes.addEventListener('click', () => {
+                const data = parseJsonInput();
+                if (data) renderQuestoes(data);
+            });
+
+            btnFlashcards.addEventListener('click', () => {
+                const data = parseJsonInput();
+                if (data) renderFlashcards(data);
+            });
+            
+            btnSummary.addEventListener('click', generateSummary);
+            btnDownloadErros.addEventListener('click', downloadErroredJson);
+            btnPromptGenerate.addEventListener('click', generatePromptForAI);
+            btnCopyPrompt.addEventListener('click', copyPromptToClipboard);
+
+            outputContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                const card = target.closest('[data-id]');
+                if (!card) return;
+                
+                const id = parseInt(card.dataset.id, 10);
+                const state = studyState.find(s => s.id === id);
+
+                if (target.dataset.action === 'toggle-answer') {
+                    const respostaContainer = target.nextElementSibling;
+                    const isHidden = respostaContainer.classList.contains('hidden');
+                    respostaContainer.classList.toggle('hidden');
+                    target.textContent = isHidden ? 'Ocultar Resposta' : 'Mostrar Resposta';
+                }
+
+                if (target.dataset.action === 'mark-correct') {
+                    state.isCorrect = !state.isCorrect;
+                    target.classList.toggle('bg-slate-200', !state.isCorrect);
+                    target.classList.toggle('text-slate-500', !state.isCorrect);
+                    target.classList.toggle('bg-green-500', state.isCorrect);
+                    target.classList.toggle('text-white', state.isCorrect);
+                }
+
+                if (target.closest('[data-action="flip"]')) {
+                    target.closest('.flashcard').classList.toggle('is-flipped');
+                }
+            });
+
+            // --- INICIALIZAÇÃO ---
+            function init() {
+                jsonInput.value = JSON.stringify(sampleData, null, 4);
+                const data = parseJsonInput();
+                if (data) renderQuestoes(data);
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
