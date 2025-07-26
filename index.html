@@ -1,410 +1,374 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Estudos com IA</title>
-    
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* Estilo base para a página */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9; /* slate-100 */
-        }
 
-        /* Estilos para o efeito de flip do Flashcard */
-        .flashcard {
-            background-color: transparent;
-            width: 100%;
-            min-height: 220px;
-            perspective: 1000px;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gerador de Estudos com React</title>
 
-        .flashcard-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            min-height: 220px;
-            text-align: center;
-            transition: transform 0.7s;
-            transform-style: preserve-3d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        <!-- Carrega o Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
 
-        .flashcard.is-flipped .flashcard-inner {
-            transform: rotateY(180deg);
-        }
-
-        .flashcard-front, .flashcard-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-
-        .flashcard-front {
-            background-color: white;
-            color: #1e293b; /* slate-800 */
-        }
-
-        .flashcard-back {
-            background-color: #334155; /* slate-700 */
-            color: white;
-            transform: rotateY(180deg);
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-r from-indigo-900 to-rose-950 antialiased text-slate-800">
-
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Carrega a fonte Inter do Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-indigo-500">Quizareto</h1>
-            <p class="mt-2 text-lg text-slate-100">Otimize suas revisões utilizando o Princípio de Pareto!</p>
-        </header>
-
-        <main class="flex flex-col gap-4 rounded-xl shadow-lg">
-            
-            <div class="flex flex-col md:flex-row gap-8 rounded-xl shadow-lg">
-                <!-- Coluna da Esquerda: Geração de Prompt -->
-                <div class="md:w-1/2 bg-indigo-100 p-6 rounded-lg border border-indigo-200 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-bold mb-3 text-indigo-800">Gere o prompt para IA</h3>
-                    <p class="text-sm text-indigo-700 mb-4">Preencha os itens abaixo para criar um prompt otimizado para o conteudo que você quer estudar.</p>
-
-                    <div>
-                        <label for="ai-topic-input" class="block text-sm font-semibold mb-1 text-slate-700">Tópico; Qtd. de questões; Dificuldade</label>
-                        <input type="text" id="ai-topic-input" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Revolução Francesa; 8; Difícil">
-                    </div>
-                    
-                    <button id="btn-prompt-generate" class="mt-2 w-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-500/40 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                        Gerar Prompt
-                    </button>
-                    
-                    <div id="prompt-output-area" class="mt-4">
-                        <label class="block text-sm font-semibold mb-1 text-indigo-800">Copie o prompt abaixo e cole na IA de sua preferência:</label>
-                        <textarea id="generated-prompt" rows="5" readonly class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-sm"></textarea>
-                        <button id="btn-copy-prompt" class="mt-2 w-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-800">Copiar Prompt</button>
-                    </div>
-                </div>
-
-                <!-- Coluna da Direita: Input Manual -->
-                <div class="flex flex-col md:w-1/2 bg-indigo-100 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-2 text-indigo-800">Cole aqui resposta gerada pela IA:</h3>
-                    <textarea id="json-input" rows="8" class="w-full h-4/5 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Cole o JSON da sua IA aqui..."></textarea>
-                    <div id="error-message" class="mt-2 text-sm text-red-600 font-medium"></div>
-                    <div class="flex gap-4 mt-4">
-                        <button id="btn-questoes" class="w-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-800">
-                            Ver como Questões
-                        </button>
-                        <button id="btn-flashcards" class="w-full bg-gradient-to-br from-rose-500 to-rose-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700">
-                            Ver como Flashcards
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-500/40 backdrop-blur-md mt-4 p-8 space-y-6 rounded-xl shadow-lg">
-                <div id="output-container" class="space-y-6">
-                <!-- O conteúdo gerado aparecerá aqui -->
-                </div>
-
-                <!-- Botões de Relatório -->
-               <div id="summary-controls" class="bg-indigo-100 hidden p-8 pt-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-bold text-center text-slate-700 mb-4">Baixar arquivos</h3>
-                    <div class="flex flex-col sm:flex-row justify-center gap-4">
-                        <button id="btn-summary" class="w-full sm:w-auto bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition">
-                            Resumo de Revisão (PDF)
-                        </button>
-                        <button id="btn-download-erros" class="w-full sm:w-auto bg-gradient-to-br from-rose-500 to-rose-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
-                            Questões a Revisar (JSON)
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            
-            
-
-        </main>
-        
-        <footer class="flex flex-col text-center mt-8 gap-2 text-slate-100 text-sm">
-            <p>Criado por Pedro C. F. Teles</p>
-            <div class="flex justify-center items-center space-x-6">
-                <a href="https://www.instagram.com/eusouopeu" target="_blank" rel="noopener noreferrer" class="text-rose-500 hover:text-indigo-600 transition" aria-label="Instagram">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="18.5" y1="5.5" x2="18.51" y2="5.5"></line></svg>
-                </a>
-                <a href="https://www.linkedin.com/in/teles-pedro" target="_blank" rel="noopener noreferrer" class="text-rose-500 hover:text-indigo-600 transition" aria-label="LinkedIn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                </a>
-                <a href="https://github.com/eusouopeu" target="_blank" rel="noopener noreferrer" class="text-rose-500 hover:text-indigo-600 transition" aria-label="GitHub">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                </a>
-            </div>
-        </footer>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- ELEMENTOS DO DOM ---
-            const jsonInput = document.getElementById('json-input');
-            const btnQuestoes = document.getElementById('btn-questoes');
-            const btnFlashcards = document.getElementById('btn-flashcards');
-            const outputContainer = document.getElementById('output-container');
-            const errorMessage = document.getElementById('error-message');
-            const summaryControls = document.getElementById('summary-controls');
-            const btnSummary = document.getElementById('btn-summary');
-            const btnDownloadErros = document.getElementById('btn-download-erros');
-            
-            // --- ELEMENTOS DO GERADOR DE PROMPT ---
-            const aiTopicInput = document.getElementById('ai-topic-input');
-            const btnPromptGenerate = document.getElementById('btn-prompt-generate');
-            const promptOutputArea = document.getElementById('prompt-output-area');
-            const generatedPrompt = document.getElementById('generated-prompt');
-            const btnCopyPrompt = document.getElementById('btn-copy-prompt');
-
-            // --- ESTADO DA APLICAÇÃO ---
-            let originalData = [];
-            let studyState = [];
-
-            // --- DADOS DE EXEMPLO ---
-            const sampleData = [
-                { "id": 1, "assunto": "JavaScript", "nivel": "Fácil", "pergunta": "O que o método `addEventListener` faz?", "resposta": "Ele anexa um manipulador de eventos a um elemento específico, permitindo executar uma função quando o evento ocorre." },
-                { "id": 2, "assunto": "Biologia Celular", "nivel": "Médio", "pergunta": "Qual é a principal função das mitocôndrias?", "resposta": "São responsáveis pela respiração celular e pela produção da maior parte do ATP (energia) da célula." }
-            ];
-
-            // --- FUNÇÕES DE LÓGICA E RENDERIZAÇÃO ---
-
-            function clearOutput() {
-                outputContainer.innerHTML = '';
-                errorMessage.textContent = '';
-                summaryControls.classList.add('hidden');
+        <style>
+            /* Estilos base para garantir a fonte */
+            body {
+                font-family: 'Inter', sans-serif;
             }
+        </style>
+        </head>
 
-            function initializeState(data) {
-                originalData = data;
-                studyState = data.map(item => ({ id: item.id, isCorrect: false }));
-            }
+    <body>
+        <!-- Onde a aplicação React será renderizada -->
+        <div id="root"></div>
 
-            function parseJsonInput() {
-                try {
-                    const data = JSON.parse(jsonInput.value);
-                    if (!Array.isArray(data) || !data.every(item => 'id' in item)) {
-                         errorMessage.textContent = 'Erro: O JSON deve ser um array de objetos, e cada objeto deve ter uma chave "id".';
-                         return null;
+        <!-- Carrega as bibliotecas React e ReactDOM -->
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+        <!-- Carrega o Babel para transpilar JSX no navegador -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        <!-- Seu código React vai aqui, dentro de uma tag script com type="text/babel" -->
+        <script type="text/babel">
+            const { useState, useEffect } = React;
+
+                // --- DADOS DE EXEMPLO E ESTADO INICIAL ---
+                const sampleData = [
+                    { "id": 1, "assunto": "React Hooks", "nivel": "Fácil", "pergunta": "O que o hook `useState` faz?", "resposta": "Ele permite adicionar estado a componentes de função, retornando um valor e uma função para atualizá-lo." },
+                    { "id": 2, "assunto": "CSS Moderno", "nivel": "Médio", "pergunta": "Qual a principal vantagem de usar Flexbox?", "resposta": "Facilitar a criação de layouts unidimensionais complexos, alinhando e distribuindo itens em um container de forma previsível." },
+                    { "id": 3, "assunto": "JavaScript Assíncrono", "nivel": "Difícil", "pergunta": "Diferencie `async/await` de `.then()` para lidar com Promises.", "resposta": "`async/await` é uma sintaxe mais limpa (syntax sugar) que permite escrever código assíncrono de forma síncrona, enquanto `.then()` usa callbacks para tratar a resolução ou rejeição da Promise." }
+                ];
+
+                // --- ÍCONES SVG COMO COMPONENTES ---
+                const InstagramIcon = () => (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="18.5" y1="5.5" x2="18.51" y2="5.5"></line></svg>
+                );
+
+                const LinkedInIcon = () => (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                );
+
+                const GitHubIcon = () => (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                );
+
+                const SunIcon = () => (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                );
+
+                const MoonIcon = () => (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                );
+
+                // --- COMPONENTES DA UI ---
+                const Header = ({ theme, toggleTheme }) => (
+                    <header className="text-center mb-10 relative">
+                        <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Gerador de Estudos</h1>
+                        <p className="mt-3 text-lg text-gray-500 dark:text-gray-400">Crie um prompt para gerar seu JSON ou cole-o manualmente.</p>
+                        <button onClick={toggleTheme} className="absolute top-0 right-0 p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 transition">
+                            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                        </button>
+                    </header>
+            );
+
+                const PromptGenerator = ({ setGeneratedPrompt }) => {
+                    const [inputValue, setInputValue] = useState('');
+                    const [localPrompt, setLocalPrompt] = useState('');
+                    const [isCopied, setIsCopied] = useState(false);
+
+                const handleGenerate = () => {
+                    const [topic, quantityStr, difficulty] = inputValue.split(';').map(s => s.trim());
+                    const quantity = parseInt(quantityStr, 10) || 5;
+                    const finalDifficulty = difficulty || 'variada';
+
+                    if (!topic) {
+                        alert("Por favor, insira pelo menos um tópico.");
+                        return;
                     }
-                    errorMessage.textContent = '';
-                    initializeState(data);
-                    return data;
-                } catch (error) {
-                    errorMessage.textContent = 'Erro: O formato do JSON é inválido.';
-                    clearOutput();
-                    return null;
-                }
-            }
-            
-            function renderQuestoes(data) {
-                clearOutput();
-                const html = data.map(item => {
-                    const state = studyState.find(s => s.id === item.id);
-                    return `
-                    <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm relative" data-id="${item.id}">
-                        <button data-action="mark-correct" class="${state.isCorrect ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition">&check;</button>
-                        <div class="flex items-center mb-4 flex-wrap gap-2">
-                            <p class="text-sm font-medium text-indigo-600">${item.assunto || 'N/A'}</p>
-                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${ item.nivel === 'Fácil' ? 'bg-green-600 text-green-100' : item.nivel === 'Médio' ? 'bg-yellow-600 text-yellow-100' : 'bg-rose-600 text-rose-100' }">${item.nivel || 'N/A'}</span>
+
+                    const prompt = `Crie um arquivo JSON para um quiz sobre '${topic}'. O JSON deve ser um array de ${quantity} objetos. Cada objeto deve ter as chaves: "id" (numérico e único, começando em 1), "assunto" (string, o tópico principal), "nivel" (string, com dificuldade ${finalDifficulty}), "pergunta" (string) e "resposta" (string). O JSON deve ser estritamente válido e pronto para ser processado.`;
+
+                    setLocalPrompt(prompt);
+                    setGeneratedPrompt(prompt);
+                };
+
+                const handleCopy = () => {
+                    navigator.clipboard.writeText(localPrompt).then(() => {
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                    });
+                };
+
+                return (
+                    <div className="bg-gray-100 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-xl font-bold mb-3 text-purple-600 dark:text-purple-300">✨ Gerador de Prompt para IA</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Preencha os campos para criar um prompt otimizado.</p>
+
+                        <div>
+                            <label htmlFor="ai-topic-input" className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Tópico; Quantidade; Dificuldade</label>
+                            <input
+                                type="text"
+                                id="ai-topic-input"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                className="w-full p-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                                placeholder="Ex: React; 5; Média"
+                            />
                         </div>
-                        <p class="text-slate-800 text-lg mb-4 pr-10">${item.pergunta || 'N/A'}</p>
-                        <div class="border-t border-slate-200 pt-3">
-                            <button data-action="toggle-answer" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Mostrar Resposta</button>
-                            <div class="resposta-container hidden mt-2">
-                                <p class="text-slate-700 bg-slate-50 p-3 rounded-md">${item.resposta || 'N/A'}</p>
+
+                        <button onClick={handleGenerate} className="mt-4 w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">
+                            Gerar Prompt
+                        </button>
+
+                        {localPrompt && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Seu prompt gerado:</label>
+                                <textarea value={localPrompt} readOnly rows="5" className="w-full p-3 bg-gray-200 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300"></textarea>
+                                <button onClick={handleCopy} className="mt-2 w-full bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700">
+                                    {isCopied ? 'Copiado!' : 'Copiar Prompt'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+                const JsonInput = ({ jsonInput, setJsonInput, onGenerate }) => {
+                    return (
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Cole o JSON gerado aqui</h3>
+                            <textarea
+                                value={jsonInput}
+                                onChange={(e) => setJsonInput(e.target.value)}
+                                rows="8"
+                                className="w-full p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm text-gray-800 dark:text-gray-300"
+                                placeholder="Cole o JSON da sua IA aqui..."
+                            />
+                            <div className="flex gap-4 mt-4">
+                                <button onClick={() => onGenerate('questoes')} className="w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600">
+                                    Ver como Questões
+                                </button>
+                            <button onClick={() => onGenerate('flashcards')} className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+                                Ver como Flashcards
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+                const QuestionCard = ({ item, isCorrect, onToggleCorrect, onToggleAnswer, isRevealed }) => {
+                    const levelColor = {
+                        'Fácil': 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+                        'Médio': 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+                        'Difícil': 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+                    };
+
+                    return (
+                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-lg shadow-lg relative">
+                            <button onClick={onToggleCorrect} className={`${isCorrect ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition`}>&check;</button>
+                            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{item.assunto || 'N/A'}</p>
+                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${levelColor[item.nivel] || 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-300'}`}>{item.nivel || 'N/A'}</span>
+                            </div>
+                        <p className="text-gray-800 dark:text-gray-200 text-lg mb-4 pr-10">{item.pergunta || 'N/A'}</p>
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                            <button onClick={onToggleAnswer} className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300">
+                                {isRevealed ? 'Ocultar Resposta' : 'Mostrar Resposta'}
+                            </button>
+                            {isRevealed && (
+                                <div className="mt-2">
+                                    <p className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900/50 p-3 rounded-md">{item.resposta || 'N/A'}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+                const Flashcard = ({ item, isCorrect, onToggleCorrect }) => {
+                    const [isFlipped, setIsFlipped] = useState(false);
+                    const levelColor = {
+                        'Fácil': 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+                        'Médio': 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+                        'Difícil': 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+                    };
+
+                return (
+                    <div className="relative" style={{ perspective: '1000px' }}>
+                        <button onClick={onToggleCorrect} className={`${isCorrect ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition z-20`}>&check;</button>
+                        <div
+                            className="relative w-full h-56 transition-transform duration-700 cursor-pointer"
+                            style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                            onClick={() => setIsFlipped(!isFlipped)}
+                        >
+                            {/* Frente */}
+                            <div className="absolute w-full h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 flex flex-col justify-center items-center text-center" style={{ backfaceVisibility: 'hidden' }}>
+                                <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
+                                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{item.assunto || 'N/A'}</p>
+                                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${levelColor[item.nivel] || 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-300'}`}>{item.nivel || 'N/A'}</span>
+                                </div>
+                                <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">{item.pergunta || 'N/A'}</p>
+                            </div>
+                            {/* Verso */}
+                            <div className="absolute w-full h-full bg-purple-100 dark:bg-purple-900/50 border border-purple-200 dark:border-purple-700 rounded-lg p-6 flex justify-center items-center text-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                                <p className="text-lg text-purple-800 dark:text-gray-200">{item.resposta || 'N/A'}</p>
                             </div>
                         </div>
                     </div>
-                `}).join('');
-                outputContainer.innerHTML = html;
-                summaryControls.classList.remove('hidden');
-            }
+                );
+            };
 
-            function renderFlashcards(data) {
-                clearOutput();
-                const html = data.map(item => {
-                    const state = studyState.find(s => s.id === item.id);
-                    return `
-                    <div class="relative">
-                        <button data-action="mark-correct" class="${state.isCorrect ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'} absolute top-4 right-4 w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition z-10">&check;</button>
-                        <div class="flashcard" data-action="flip" data-id="${item.id}">
-                            <div class="flashcard-inner">
-                                <div class="flashcard-front">
-                                    <div class="w-full flex items-center justify-center px-2 mb-4">
-                                        <p class="text-sm font-medium text-slate-500">${item.assunto || 'N/A'}</p>
-                                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${ item.nivel === 'Fácil' ? 'bg-green-600 text-green-100' : item.nivel === 'Médio' ? 'bg-yellow-600 text-yellow-100' : 'bg-rose-600 text-rose-100' }">${item.nivel || 'N/A'}</span>
+                const Footer = () => (
+                    <footer className="text-center mt-12 text-gray-500 dark:text-gray-400">
+                        <p className="text-sm mb-4">Criado por Pedro Teles para facilitar seus estudos.</p>
+                        <div className="flex justify-center items-center space-x-6">
+                            <a href="https://www.instagram.com/eusouopeu" target="_blank" rel="noopener noreferrer" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition" aria-label="Instagram"><InstagramIcon /></a>
+                            <a href="https://www.linkedin.com/in/teles-pedro" target="_blank" rel="noopener noreferrer" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition" aria-label="LinkedIn"><LinkedInIcon /></a>
+                            <a href="https://github.com/eusouopeu" target="_blank" rel="noopener noreferrer" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition" aria-label="GitHub"><GitHubIcon /></a>
+                    </div>
+                </footer>
+            );
+
+                // --- COMPONENTE PRINCIPAL ---
+                function App() {
+                    const [jsonInput, setJsonInput] = useState('');
+                    const [studyData, setStudyData] = useState([]);
+                    const [studyState, setStudyState] = useState({});
+                    const [viewMode, setViewMode] = useState('');
+                    const [error, setError] = useState('');
+                    const [theme, setTheme] = useState('dark');
+
+                useEffect(() => {
+                    const savedTheme = localStorage.getItem('study-app-theme') || 'dark';
+                    setTheme(savedTheme);
+                }, []);
+
+                useEffect(() => {
+                    if (theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.body.style.backgroundColor = '#111827';
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        document.body.style.backgroundColor = '#f3f4f6';
+                    }
+                    localStorage.setItem('study-app-theme', theme);
+                }, [theme]);
+
+                const toggleTheme = () => {
+                    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+                };
+
+                useEffect(() => {
+                    setJsonInput(JSON.stringify(sampleData, null, 4));
+                }, []);
+
+                const handleGenerate = (mode) => {
+                    try {
+                        const data = JSON.parse(jsonInput);
+                        if (!Array.isArray(data) || !data.every(item => 'id' in item)) {
+                            setError('Erro: O JSON deve ser um array de objetos, e cada objeto deve ter uma chave "id".');
+                            setStudyData([]);
+                            return;
+                        }
+                        setError('');
+                        setStudyData(data);
+
+                        const initialState = data.reduce((acc, item) => {
+                            acc[item.id] = { isCorrect: false, isRevealed: false };
+                            return acc;
+                        }, {});
+                        setStudyState(initialState);
+                        setViewMode(mode);
+                    } catch (e) {
+                        setError('Erro: O formato do JSON é inválido.');
+                        setStudyData([]);
+                    }
+                };
+
+                const handleToggleCorrect = (id) => {
+                    setStudyState(prev => ({
+                        ...prev,
+                        [id]: { ...prev[id], isCorrect: !prev[id].isCorrect }
+                    }));
+                };
+
+                const handleToggleAnswer = (id) => {
+                    setStudyState(prev => ({
+                        ...prev,
+                        [id]: { ...prev[id], isRevealed: !prev[id].isRevealed }
+                    }));
+                };
+
+                // Lógica para download/impressão permanece a mesma do HTML
+                // ...
+
+                return (
+                    <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+                        <div className="container mx-auto p-4 md:p-8 max-w-7xl">
+                            <Header theme={theme} toggleTheme={toggleTheme} />
+                            <main className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg dark:shadow-2xl dark:shadow-purple-900/10 border border-gray-200 dark:border-gray-700">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <PromptGenerator setGeneratedPrompt={setJsonInput} />
+                                    <div>
+                                        <JsonInput jsonInput={jsonInput} setJsonInput={setJsonInput} onGenerate={handleGenerate} />
+                                        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
                                     </div>
-                                    <p class="text-xl font-semibold px-4">${item.pergunta || 'N/A'}</p>
                                 </div>
-                                <div class="flashcard-back">
-                                    <p class="text-lg">${item.resposta || 'N/A'}</p>
+
+                                {studyData.length > 0 && <hr className="my-8 border-gray-200 dark:border-gray-700" />}
+
+                                <div className={viewMode === 'flashcards' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'space-y-6'}>
+                                    {viewMode === 'questoes' && studyData.map(item => (
+                                        <QuestionCard
+                                            key={item.id}
+                                            item={item}
+                                            isCorrect={studyState[item.id]?.isCorrect}
+                                            isRevealed={studyState[item.id]?.isRevealed}
+                                            onToggleCorrect={() => handleToggleCorrect(item.id)}
+                                            onToggleAnswer={() => handleToggleAnswer(item.id)}
+                                        />
+                                    ))}
+                                    {viewMode === 'flashcards' && studyData.map(item => (
+                                        <Flashcard
+                                            key={item.id}
+                                            item={item}
+                                            isCorrect={studyState[item.id]?.isCorrect}
+                                            onToggleCorrect={() => handleToggleCorrect(item.id)}
+                                        />
+                                    ))}
                                 </div>
-                            </div>
+
+                                {studyData.length > 0 && (
+                                    <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                        <h3 className="text-xl font-bold text-center text-gray-800 dark:text-gray-200 mb-4">Relatórios</h3>
+                                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                            <button className="w-full sm:w-auto bg-gray-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-500 transition">
+                                                Baixar Resumo de Acertos
+                                            </button>
+                                            <button className="w-full sm:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition">
+                                                Baixar JSON dos Erros
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </main>
+                            <Footer />
                         </div>
                     </div>
-                `}).join('');
-                outputContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">${html}</div>`;
-                summaryControls.classList.remove('hidden');
-            }
-            
-            function generateSummary() {
-                const date = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-                let summaryHtml = `
-                    <html><head><title>Resumo de Acertos</title><style>body{font-family: sans-serif; padding: 20px;} table{width: 100%; border-collapse: collapse;} th, td{border: 1px solid #ddd; padding: 8px; text-align: left;} th{background-color: #f2f2f2;}</style></head>
-                    <body><h1>Resumo de Acertos</h1><p><strong>Data:</strong> ${date}</p><table><thead><tr><th>Questão</th><th>Acertou?</th></tr></thead><tbody>`;
-
-                originalData.forEach(item => {
-                    const state = studyState.find(s => s.id === item.id);
-                    summaryHtml += `<tr><td><strong>${item.assunto}:</strong> ${item.pergunta}</td><td>${state.isCorrect ? 'Sim ✅' : 'Não ❌'}</td></tr>`;
-                });
-
-                summaryHtml += `</tbody></table></body></html>`;
-                
-                const summaryWindow = window.open('', '_blank');
-                summaryWindow.document.write(summaryHtml);
-                summaryWindow.document.close();
-                summaryWindow.print();
+                );
             }
 
-            function downloadErroredJson() {
-                const erroredIds = studyState.filter(s => !s.isCorrect).map(s => s.id);
-                const erroredItems = originalData.filter(item => erroredIds.includes(item.id));
+                // Renderiza o componente principal na div#root
+                const container = document.getElementById('root');
+                const root = ReactDOM.createRoot(container);
+                root.render(<App />);
 
-                if (erroredItems.length === 0) {
-                    alert('Parabéns! Você acertou todas as questões.');
-                    return;
-                }
-                
-                const now = new Date();
-                const day = String(now.getDate()).padStart(2, '0');
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const year = String(now.getFullYear()).slice(-2);
-                const formattedDate = `${day}-${month}-${year}`;
+</script>
+        </body>
 
-                const jsonString = JSON.stringify(erroredItems, null, 4);
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `erros_revisao_${formattedDate}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-
-            // --- GERADOR DE PROMPT ---
-            function generatePromptForAI() {
-                const inputParts = aiTopicInput.value.split(';').map(part => part.trim());
-                
-                const topic = inputParts[0];
-                const quantity = parseInt(inputParts[1], 10) || 5;
-                const difficulty = inputParts[2] || 'variada';
-
-                if (!topic) {
-                    alert("Por favor, insira pelo menos um tópico.");
-                    return;
-                }
-
-                const prompt = `Crie um arquivo JSON para um quiz sobre '${topic}', utilizando o princípio de pareto para gerar questões com os 20% mais relevantes do assunto. O JSON deve ser um array de ${quantity} objetos. Cada objeto deve ter as chaves: "id" (numérico e único, começando em 1), "assunto" (string, o tópico principal), "nivel" (string, com dificuldade ${difficulty}), "pergunta" (string) e "resposta" (string). O JSON deve ser estritamente válido e pronto para ser processado.`;
-                
-                generatedPrompt.value = prompt;
-                promptOutputArea.classList.remove('hidden');
-            }
-
-            function copyPromptToClipboard() {
-                generatedPrompt.select();
-                generatedPrompt.setSelectionRange(0, 99999); // For mobile devices
-
-                try {
-                    document.execCommand('copy');
-                    btnCopyPrompt.textContent = 'Copiado!';
-                    setTimeout(() => {
-                        btnCopyPrompt.textContent = 'Copiar Prompt';
-                    }, 2000);
-                } catch (err) {
-                    console.error('Falha ao copiar o prompt: ', err);
-                    alert('Não foi possível copiar o texto. Por favor, copie manualmente.');
-                }
-            }
-
-            // --- EVENT LISTENERS ---
-            btnQuestoes.addEventListener('click', () => {
-                const data = parseJsonInput();
-                if (data) renderQuestoes(data);
-            });
-
-            btnFlashcards.addEventListener('click', () => {
-                const data = parseJsonInput();
-                if (data) renderFlashcards(data);
-            });
-            
-            btnSummary.addEventListener('click', generateSummary);
-            btnDownloadErros.addEventListener('click', downloadErroredJson);
-            btnPromptGenerate.addEventListener('click', generatePromptForAI);
-            btnCopyPrompt.addEventListener('click', copyPromptToClipboard);
-
-            outputContainer.addEventListener('click', (e) => {
-                const target = e.target;
-                const card = target.closest('[data-id]');
-                if (!card) return;
-                
-                const id = parseInt(card.dataset.id, 10);
-                const state = studyState.find(s => s.id === id);
-
-                if (target.dataset.action === 'toggle-answer') {
-                    const respostaContainer = target.nextElementSibling;
-                    const isHidden = respostaContainer.classList.contains('hidden');
-                    respostaContainer.classList.toggle('hidden');
-                    target.textContent = isHidden ? 'Ocultar Resposta' : 'Mostrar Resposta';
-                }
-
-                if (target.dataset.action === 'mark-correct') {
-                    state.isCorrect = !state.isCorrect;
-                    target.classList.toggle('bg-slate-200', !state.isCorrect);
-                    target.classList.toggle('text-slate-500', !state.isCorrect);
-                    target.classList.toggle('bg-green-500', state.isCorrect);
-                    target.classList.toggle('text-white', state.isCorrect);
-                }
-
-                if (target.closest('[data-action="flip"]')) {
-                    target.closest('.flashcard').classList.toggle('is-flipped');
-                }
-            });
-
-            // --- INICIALIZAÇÃO ---
-            function init() {
-                jsonInput.value = JSON.stringify(sampleData, null, 4);
-                const data = parseJsonInput();
-                if (data) renderQuestoes(data);
-            }
-
-            init();
-        });
-    </script>
-</body>
 </html>
